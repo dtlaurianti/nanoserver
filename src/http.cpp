@@ -8,38 +8,22 @@
 #include <map>
 #include "http.h"
 
-enum HTTPMethod {
-    GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH, UNKNOWN
-};
 
 HTTPMethod stringToHTTPMethod(const std::string method) {
-    static const std::map<std::string, HTTPMethod> httpTable {
-            {"GET", HTTPMethod::GET},
-            {"HEAD", HTTPMethod::HEAD},
-            {"POST", HTTPMethod::POST},
-            {"PUT", HTTPMethod::PUT},
-            {"DELETE", HTTPMethod::DELETE},
-            {"CONNECT", HTTPMethod::CONNECT},
-            {"OPTIONS", HTTPMethod::OPTIONS},
-            {"TRACE", HTTPMethod::TRACE},
-            {"PATCH", HTTPMethod::PATCH},
-    };
-
-    // search for
-    auto httpMap = httpTable.find(method);
-    if (httpMap == httpTable.end()) {
+    auto httpMap = stringHTTPTable.find(method);
+    if (httpMap == stringHTTPTable.end()) {
         return HTTPMethod::UNKNOWN;
     }
     return httpMap->second;
 }
 
-struct Request {
-    HTTPMethod method;
-    std::string target;
-    std::string version;
-    std::map<std::string, std::string> headers;
-    std::string body;
-};
+std::string httpMethodToString(const HTTPMethod method) {
+    auto httpMap = httpStringTable.find(method);
+    if (httpMap == httpStringTable.end()) {
+        return "";
+    }
+    return httpMap->second;
+}
 
 Request parseRequest(const std::string str) {
     Request req;
@@ -63,6 +47,7 @@ Request parseRequest(const std::string str) {
     }
 
     // get body
+    req.body = "";
     if (req.headers.count("Transfer-Encoding")) {
         Serial.println("Error: Server does not support Transfer-Encoding");
         return req;
@@ -70,4 +55,9 @@ Request parseRequest(const std::string str) {
     if (req.headers.count("Content-Length") <= 0) {
         return req;
     }
+    int bodyLen = std::stoi(req.headers["Content-Length"]);
+    for (int i = 0; i < bodyLen; ++i) {
+        req.body += stream.get();
+    }
+    return req;
 };
