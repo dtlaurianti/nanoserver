@@ -48,5 +48,6 @@ HTTPMethod stringToHTTPMethod(const std::string method);
 std::string httpMethodToString(const HTTPMethod method);
 
 Request parseRequest(const std::string str);
+void printRequest(Request req);
 
 #endif //NANOSERVER_HTTP_H
