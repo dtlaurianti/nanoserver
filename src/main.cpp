@@ -1,7 +1,9 @@
+#include <string>
 #include <Arduino.h>
 #include <SPI.h>
 #include <WiFiNINA.h>
 #include "wifi.h"
+#include "http.h"
 
 int status = WL_IDLE_STATUS;
 int led = LED_BUILTIN;
@@ -37,12 +39,32 @@ void loop() {
     WiFiClient client = server.available();
     if (client) {
         Serial.println("Client Connected...");
+        std::string str;
         bool currentLineBlank = true;
         while (client.connected()) {
             if (client.available()) {
                 char c = client.read();
+                str += c;
                 Serial.write(c);
                 if (c == '\n' && currentLineBlank) {
+                    Request req = parseRequest(str);
+                    Serial.print("Method: ");
+                    // std::string converted to Arduino String
+                    Serial.println(httpMethodToString(req.method).c_str());
+                    Serial.print("Target: ");
+                    // std::string converted to Arduino String
+                    Serial.println(req.target.c_str());
+                    Serial.print("Version: ");
+                    // std::string converted to Arduino String
+                    Serial.println(req.version.c_str());
+                    for (const auto& pair : req.headers) {
+                        Serial.print(pair.first.c_str());
+                        Serial.print(": ");
+                        Serial.println(pair.second.c_str());
+                    }
+                    Serial.print("Body: ");
+                    // std::string converted to Arduino String
+                    Serial.println(req.body.c_str());
                     client.println("HTTP/1.1 200 OK");
                     client.println("Content-type:text/html");
                     client.println();
